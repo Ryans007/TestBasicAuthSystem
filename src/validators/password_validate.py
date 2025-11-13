@@ -1,31 +1,32 @@
 """Módulo para validação de senhas."""
 
-def validate_password(password: str) -> str | None:
-    """
-    Valida se a senha fornecida atende aos critérios de segurança.
+def validate_pass(senha: str):
+    if not (8 <= len(senha) <= 16):
+        return 0
 
-    Args:
-        password (str): A senha a ser validada.
+    tem_maiuscula = any(c.isupper() for c in senha)
+    if not tem_maiuscula:
+        return -1
 
-    Returns:
-        str | None: Mensagem de erro se a senha for inválida, None caso contrário.
-    """
-    especial_caracters = "&*$%#!^~[]"
+    tem_minuscula = any(c.islower() for c in senha)
+    if not tem_minuscula:
+        return -2
 
-    if len(password) < 8 or len(password) > 16:
-        return "A string de senha deve ter entre 8 e 16 caracteres."
+    tem_numero = any(c.isdigit() for c in senha)
+    if not tem_numero:
+        return -3
 
-    has_upper = any(char.isupper() for char in password)
-    has_lower = any(char.islower() for char in password)
-    has_number = any(char.isdigit() for char in password)
-    has_special_caracter = any(char in especial_caracters for char in password)
 
-    if not has_upper:
-        return "A string de senha deve conter ao menos uma letra maiúscula."
-    if not has_lower:
-        return "A string de senha deve conter ao menos uma letra minúscula."
-    if not has_number:
-        return "A string de senha deve conter ao menos um número."
-    if not has_special_caracter:
-        return "A string de senha deve conter ao menos um caractere especial."
-    return None
+    # Verifica se é um caractere especial inválido
+    especiais_validos = "&*$%#!^~[]"
+    for c in senha:
+        if (c not in especiais_validos) and (not c.isalnum()):
+            return -4
+
+    tem_especial = any(c in especiais_validos for c in senha)
+    if not tem_especial:
+        return -5
+
+
+
+    return 1
