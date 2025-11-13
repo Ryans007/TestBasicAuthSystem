@@ -1,16 +1,32 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form
 
 from database_ import get_users_db
 from models.user import UserModel
-
 router = APIRouter()
 
 @router.post("/login")
-async def login_user(username: str, password: str, db=Depends(get_users_db)):
-    """Faz o login de um usuário existente."""
+# Mude a assinatura desta função
+async def login_user(
+    username: str = Form(...),
+    password: str = Form(...),
+    email: str = Form(...),
+    db=Depends(get_users_db)
+):
+    """
+    Realiza o login validando:
+    - Usuário existente
+    """
+
+
+    # 1. Verificar usuário
     user = db.query(UserModel).filter(UserModel.username == username).first()
 
-    if not user or not user.verify_password(password):
-        raise HTTPException(status_code=401, detail="Nome de usuário ou senha inválidos.")
+    if not user:
+        raise HTTPException(status_code=401, detail="Usuário não encontrado")
 
-    return {"message": "Login bem-sucedido", "username": user.username}
+    # 2. Verificar senha
+    if not user.verify_password(password):
+        raise HTTPException(status_code=401, detail="Senha incorreta")
+
+    # 3. Sucesso
+    return {"message": "Login efetuado com sucesso", "username": user.username}

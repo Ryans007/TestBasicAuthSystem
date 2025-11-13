@@ -1,49 +1,55 @@
-from fastapi import APIRouter, Depends, HTTPException
-
+from fastapi import APIRouter, Depends, HTTPException, Form
 from database_ import get_users_db
-
-from models import UserModel
-from schemes import UserRegisterSchema
-
-from typing import Dict, Any
-
-from validators.email_validate import is_a_valid_email
-from validators.password_validate import validate_password
+from models.user import UserModel
 from utils import hash_password
-
+from validators.email_validate import  validate_email
+from validators.password_validate import  validate_pass
 router = APIRouter()
 
-@router.post("/register", response_model=UserRegisterSchema)
-async def register_user(user: UserRegisterSchema, db=Depends(get_users_db)) -> Dict[str, Any]:
-    """Register a new user."""
-    # Buscar usuário existente usando query do SQLAlchemy
-    existing_user = db.query(UserModel).filter(UserModel.username == user.username).first()
+@router.post("/register")
+# Mude a assinatura desta função
+async def register_user(
+    username: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(""),
+    db=Depends(get_users_db)
+):
+    # 1. Verifica se já existe
+    user_exist = db.query(UserModel).filter(UserModel.username == username).first()
+    if user_exist:
+        raise HTTPException(400, "Usuário já existe")
 
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Usuário ja existe no banco de dados.")
+    # 2. Validar e-mail
+    v_email = validate_email(email)
+    if v_email == 0:
+        raise HTTPException(status_code=400, detail="Email não pode estar vazio")
+    elif v_email == -1:
+        raise HTTPException(status_code=400, detail="Email inválido")
 
-    if not is_a_valid_email(user.email):
-        raise HTTPException(status_code=400, detail="Email inválido.")
+    # 3. Validar senha
+    v_pass = validate_pass(password)
+    match v_pass:
+        case 0:
+            raise HTTPException(status_code=400, detail="Senha deve ter entre 8 e 16 caracteres")
+        case -1:
+            raise HTTPException(status_code=400, detail="Senha deve conter ao menos 1 letra maiúscula")
+        case -2:
+            raise HTTPException(status_code=400, detail="Senha deve conter ao menos 1 letra minúscula")
+        case -3:
+            raise HTTPException(status_code=400, detail="Senha deve conter ao menos 1 número")
+        case -4:
+            raise HTTPException(status_code=400, detail="Caractere especial inválido")
+        case -5:
+            raise HTTPException(status_code=400, detail="Senha deve conter ao menos 1 caractere especial")
 
-    password_error = validate_password(user.password)
-    if password_error is not None:
-        raise HTTPException(status_code=400, detail=f"Senha inválida. {password_error}")
-
-    # Criar novo usuário com senha hasheada
-    hashed_pwd = hash_password(user.password)
+    # Salva
     new_user = UserModel(
-        username=user.username,
-        email=user.email,
-        full_name=user.full_name,
-        hashed_password=hashed_pwd
+        username=username,
+        email=email,
+        hashed_password=hash_password(password)  # <-- Correção!
     )
 
-    # Adicionar e salvar no banco de dados
     db.add(new_user)
     db.commit()
-    db.refresh(new_user)
 
-    return user
-
-
-
+    return {"message": "Usuário criado com sucesso"}
