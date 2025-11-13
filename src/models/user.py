@@ -13,7 +13,6 @@ class UserModel(AuthBase):
         id (int): Identificador único do usuário.
         username (str): Nome de usuário único.
         email (str): Endereço de e-mail do usuário.
-        full_name (Optional[str]): Nome completo do usuário.
         hashed_password (str): Senha do usuário armazenada de forma segura.
     """
     __tablename__ = "users"
@@ -21,7 +20,6 @@ class UserModel(AuthBase):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
-    full_name = Column(String, nullable=True)
     hashed_password = Column(String, nullable=False)
 
     def search_user_by_username(self, username: str) -> Optional['UserModel']:
