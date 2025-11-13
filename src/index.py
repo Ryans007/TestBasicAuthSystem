@@ -23,8 +23,9 @@ def startup_event():
 def read_root():
     return {"message": "API de autenticação está funcionando! Coloque /docs no final da URL para acessar a documentação interativa."}
 
-app.include_router(register_router, prefix="/auth", tags=["auth"])
-app.include_router(login_router, prefix="/auth", tags=["auth"])
+app.include_router(register_router, tags=["auth"])
+app.include_router(login_router, tags=["auth"])
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8001)
